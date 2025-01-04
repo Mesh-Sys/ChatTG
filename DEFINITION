@@ -1,0 +1,83 @@
+config.json
+** v0.6.1
+{
+    "api_token": "<PUT_YOUR_API_TOKEN_HERE>", 
+    "chat_id": "<PUT_YOUR_CHAT_ID_HERE>",
+    "ollama_api_url": "http://localhost:11434",
+    "database_directory": "databases/chat_tg.db",
+    "text": {
+        "default_model": "llama3.1",
+        "user_set_model": "llama3.1",
+        "model_settings": {
+            "temperature": 1,
+            "num_thread": 4,
+            "num_ctx": 4096,
+            "top_k": 50,
+            "top_p": 1
+        }
+    },
+}
+
+DATABASE_STRUCTURE
+** v0.6.1
+	# main table structure
+	chat_table
+	-----------
+	| chat_id | 0 - chat_id - uuid generated table name
+	-----------
+	| ch3r... |
+	| ch59... |
+	| ch67... |
+	| che4... |
+	| chas... |
+	| ch5t... |
+	-----------
+
+	uuid table for chat
+	---------------------------
+	|  id  | user | assistant | 0 - uuid - unique id for entries
+	--------------------------- 1 - user - user queries
+	|	   |      |           | 2 - assistant - assistant responses
+	|	   |      |           |
+	|	   |      |           |
+	|	   |      |           |
+	|	   |      |           |
+	|	   |      |           |
+	---------------------------
+
+
+TELEGRAM BOT COMMANADS
+/start - prints out the bot version
+/help - prints out the commands list
+/ai - uses the chat interface for chat completion
+/chat - uses the chat interface for chat completion
+/generate - uses the generate interface for generate completion
+/newchat - creates a new chat by generating a new uuid and adding a new database entry, returns chat id
+/get_text_models - returns a list of text llm models
+/get_running_models - returns a list of currently running models
+/get_current_chat_id - returns the current chat id
+/load_text_model - if no option is specified it loads the default model into memmory
+/set_text_model - set a text model
+/get_chat_list - show all chats with snippets
+/get_current_text_model - return the model to used for query
+/print_chat - prints a chat history
+/select_chat - select a chat for chating
+
+------get commands
+/start
+/help, /h
+/newchat
+/get_current_chat_id
+/get_text_models
+/get_running_models
+/get_chat_list
+/get_current_text_model
+
+------send commands
+/ai prompt
+/chat prompt
+/generate prompt
+/load_text_model model_name
+/set_text_model model_name
+/print_chat chat_id
+/select_chat chat_id

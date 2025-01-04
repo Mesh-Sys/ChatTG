@@ -1,0 +1,17 @@
+{
+    "api_token": "<PUT_YOUR_API_TOKEN_HERE>",
+    "chat_id": "<PUT_YOUR_CHAT_ID_HERE>",
+    "ollama_api_url": "http://localhost:11434",
+    "database_directory": "databases/chat_tg.db",
+    "text": {
+        "default_model": "llama3.1",
+        "user_set_model": "llama3.1",
+        "model_settings": {
+            "temperature": 1,
+            "num_thread": 4,
+            "num_ctx": 4096,
+            "top_k": 50,
+            "top_p": 1
+        }
+    },
+}
