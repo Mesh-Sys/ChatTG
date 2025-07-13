@@ -1,6 +1,6 @@
 {
-    "api_token": "8065777043:AAERQ7Q5wcgzq3dGWMe64XjdATZxKeIR8p4",
-    "chat_id": "-1002164314290",
+    "api_token": "<PUT_YOUR_API_TOKEN_HERE>",
+    "chat_id": "<PUT_YOUR_CHAT_ID_HERE>",
     "ollama_api_url": "http://localhost:11434",
     "database_directory": "databases/ai_linux_v0.6.3.db",
     "text": {

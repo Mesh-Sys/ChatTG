@@ -1,25 +1,36 @@
 config.json
-** v0.6.1
+** v0.6.0
 {
-    "api_token": "<PUT_YOUR_API_TOKEN_HERE>", 
-    "chat_id": "<PUT_YOUR_CHAT_ID_HERE>",
-    "ollama_api_url": "http://localhost:11434",
-    "database_directory": "databases/chat_tg.db",
-    "text": {
-        "default_model": "llama3.1",
-        "user_set_model": "llama3.1",
-        "model_settings": {
-            "temperature": 1,
-            "num_thread": 4,
-            "num_ctx": 4096,
-            "top_k": 50,
-            "top_p": 1
-        }
-    },
+	"api_token": "7286367646:AAHopTmJnRjAYS_s7xaCA3dvkD5vB9dylV4",
+	"group_chat_id": "-1002164314290",
+	"ollama_api_url": "http://localhost:11434",
+	"database_directory": "database/ai_linux_v0.6.0.db",
+	"text": {
+		"default_model": "neural-dare-devil-8b",
+		"user_set_model": "neural-dare-devil-8b",
+		"model_settings": {
+			"temperature": 1,
+			"num_thread": 4,
+			"num_ctx": 4096,
+			"top_k": 50,
+			"top_p": 1
+		}
+	},
+	"v2t": {
+		"default_model": "neural-dare-devil-8b",
+		"user_set_model": "neural-dare-devil-8b",
+		"model_settings": {
+			"temperature": 1,
+			"num_thread": 4,
+			"num_ctx": 4096,
+			"top_k": 50,
+			"top_p": 1
+		}
+	}
 }
 
 DATABASE_STRUCTURE
-** v0.6.1
+** v0.6.0
 	# main table structure
 	chat_table
 	-----------
