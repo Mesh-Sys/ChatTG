@@ -1,1 +1,1 @@
-sudo podman run -dit --replace --name whisper --restart always -p 9669:8080 localhost/whisper.cpp
+podman run -dit --replace --name whisper --restart always -p 9669:8080 localhost/whisper.cpp

@@ -3,7 +3,7 @@
     "chat_id": "<PUT_YOUR_CHAT_ID_HERE>",
     "hf_token": "<PUT_YOUR_HUGGINGFACE_TOKEN_HERE>",
     "ollama_api_url": "http://localhost:11434",
-    "database_directory": "databases/chat_tg.db",
+    "database_directory": "chat_tg.db",
     "text": {
         "default_model": "deepseek-r1:1.5b",
         "user_set_model": "deepseek-r1:1.5b",

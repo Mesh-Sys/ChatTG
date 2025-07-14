@@ -6,6 +6,7 @@ import asyncio
 import uvloop
 import json
 import re
+import time
 import uuid
 import textwrap
 import logging
@@ -14,6 +15,12 @@ from datetime import datetime
 import os
 from pydub import AudioSegment
 from typing import Dict, Any, List
+
+import sys
+sys.path.append('/run/media/mesh/git_wsp/CosyVoice/third_party/Matcha-TTS')
+sys.path.append('/run/media/mesh/git_wsp/CosyVoice')
+
+from dia.model import Dia
 
 # ENABLE UVLOOP
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -346,6 +353,7 @@ def whisper_transcribe(file_path: str) -> Any:
 
 # START INTERFACING FUNCTIONS
 async def ai_chat(prompt: str, chat_id: str) -> str:
+	start_time = time.time()
 	await create_new_chat(CURRENT_TEXT_CHAT_ID)
 	chats = await get_chats_with_chat_id_text(chat_id)
 
@@ -358,10 +366,15 @@ async def ai_chat(prompt: str, chat_id: str) -> str:
 	
 	message_list.append({"role": "user", "content": prompt})
 	message_id = await insert_user_input(chat_id, prompt)
-	return await insert_assistant_input(message_id, await chat(TEXT_MODEL, message_list))
+	response = await insert_assistant_input(message_id, await chat(TEXT_MODEL, message_list))
+	logger.info(f"ai_chat - Generated response in {round(time.time() - start_time, 2)}s")
+	return response
 
 async def ai_generate_text(prompt: str) -> str:
-	return await generate(TEXT_MODEL, prompt)
+	start_time = time.time()
+	response = await generate(TEXT_MODEL, prompt)
+	logger.info(f"ai_generate_text - Generated response in {round(time.time() - start_time, 2)}s")
+	return response
 
 async def print_chat_with_chat_id(chat_id: str) -> str:
 	chats = await get_chats_with_chat_id_text(chat_id)
@@ -462,28 +475,28 @@ async def print_bot(message: str, markdown: bool = True) -> None:
 	except Exception as e:
 		logger.error(f"print_bot - Error - {e}")
 
-def use_cosyvoice(input_file: str, output_file: str, prompt: str) -> None:
-	import sys
-	sys.path.append('/run/media/mesh/git_wsp/CosyVoice/third_party/Matcha-TTS')
-	sys.path.append('/run/media/mesh/git_wsp/CosyVoice')
+def use_cosyvoice_local_inference(input_file: str, output_file: str, prompt: str) -> None:
+	start_time = time.time()
 	from cosyvoice.cli.cosyvoice import CosyVoice2
 	from cosyvoice.utils.file_utils import load_wav
 	import torchaudio
-	logger.info(f"clone_voice - Starting clone - {output_file}")
+	logger.info(f"use_cosyvoice_local_inference - Starting clone - {output_file}")
 	cosyvoice = CosyVoice2(
 		'/run/media/mesh/git_wsp/CosyVoice/pretrained_models/CosyVoice2-0.5B', 
 		load_jit=False, load_trt=False, fp16=False
 	)
-	logger.info(f"clone_voice - Loaded model")
+	logger.info(f"use_cosyvoice_local_inference - Loaded model")
 	prompt_speech_16k = load_wav(input_file, 16000)
-	logger.info(f"clone_voice - Created prompt speech")
+	logger.info(f"use_cosyvoice_local_inference - Created prompt speech")
 	for i, j in enumerate(cosyvoice.inference_instruct2(prompt, "a soft voice female", prompt_speech_16k, stream=False)):
 		torchaudio.save(output_file, j['tts_speech'], cosyvoice.sample_rate)
-	logger.info(f"clone_voice - Done cloning voice")
-	logger.info(f"clone_voice - Sending voice - {output_file}")
+	logger.info(f"use_cosyvoice_local_inference - Done cloning voice")
+	logger.info(f"use_cosyvoice_local_inference - Sending voice - {output_file}")
 	cosyvoice.quit()
+	logger.info(f"use_cosyvoice_local_inference - Generated response in {round(time.time() - start_time, 2)}s - {input_file}")
 
 def use_dia_huggingface(input_file: str, transcribed_audio: str, prompt: str) -> Any:
+	start_time = time.time()
 	logger.info(f"use_dia_huggingface - Conneting client - {HF_TOKEN} - {input_file} - {transcribed_audio} - {prompt}")
 	client = gradio_client.Client("nari-labs/Dia-1.6B", hf_token=HF_TOKEN)
 	logger.info(f"use_dia_huggingface - Sending request - {input_file}")
@@ -499,13 +512,37 @@ def use_dia_huggingface(input_file: str, transcribed_audio: str, prompt: str) ->
 		speed_factor=1,
 		api_name="/generate_audio"
 	)
-	logger.info(f"use_dia_huggingface - Received response - {input_file}")
+	logger.info(f"use_dia_huggingface - Received response in {round(time.time() - start_time, 2)}s - {input_file}")
 	return response
+
+NARI_LABS_DIA_MODEL = None
+
+def use_dia_local_inference(input_file: str, transcribed_audio: str, output_file: str, prompt: str) -> None:
+	start_time = time.time()
+	if NARI_LABS_DIA_MODEL is None:
+		global NARI_LABS_DIA_MODEL
+		logger.info(f"use_dia_local_inference - Loading model")
+		NARI_LABS_DIA_MODEL = Dia.from_pretrained("nari-labs/Dia-1.6B-0626", compute_dtype="float16")
+		logger.info(f"use_dia_local_inference - Loaded model")
+	logger.info(f"use_dia_local_inference - Starting inference - {input_file}")
+	response = NARI_LABS_DIA_MODEL.generate(
+		f"{transcribed_audio}\n{prompt}"
+		audio_prompt=input_file,
+		use_torch_compile=False,
+		verbose=True,
+		cfg_scale=1.0,
+		temperature=1.8,
+		top_p=3.1,
+		cfg_filter_top_k=50,
+		speed_factor=1
+	)
+	NARI_LABS_DIA_MODEL.save_audio(output_file, response)
+	logger.info(f"use_dia_local_inference - Generated response in {round(time.time() - start_time, 2)}s - {input_file} - {output_file}")
 
 async def clone_voice(input_file: str, prompt: str) -> None:
 	output_file = f"{gen_uuid('clone')}.wav"
 	if VOICE_MODEL.lower() == "cosyvoice":
-		await asyncio.to_thread(use_cosyvoice, input_file, output_file, prompt)
+		await asyncio.to_thread(use_cosyvoice_local_inference, input_file, output_file, prompt)
 		await bot.send_audio(CHAT_ID, telebot.types.InputFile(output_file), caption=prompt)
 		logger.info(f"clone_voice - Sent voice - {output_file}")
 	elif VOICE_MODEL.lower() == "nari-labs/dia-1.6b":
@@ -515,13 +552,9 @@ async def clone_voice(input_file: str, prompt: str) -> None:
 			logger.info(f"clone_voice - Could not transcribe audio input invalid status code - {input_file} - {status_code}")
 			await print_bot(f"Could not transcribe audio input invalid status code `{status_code}`")
 			return
-		response = await asyncio.to_thread(use_dia_huggingface, input_file, transcribed_audio, prompt)
-		logger.info(f"clone_voice - Response voice received - {input_file} - {response}")
-		if response is not None:
-			shutil.copy(response, output_file)
-			logger.info(f"clone_voice - Copied cloned voice file - {output_file}")
-			await bot.send_audio(CHAT_ID, telebot.types.InputFile(response), caption=prompt)
-			logger.info(f"clone_voice - Sent cloned voice - {response}")
+		await asyncio.to_thread(use_dia_local_inference, input_file, transcribed_audio, output_file, prompt)
+		await bot.send_audio(CHAT_ID, telebot.types.InputFile(response), caption=prompt)
+	logger.info(f"clone_voice - Sent generated voice")
 
 @bot.message_handler(commands=['start'])
 async def exec_cmd_start(message: telebot.types.Message):
