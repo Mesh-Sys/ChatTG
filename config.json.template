@@ -1,11 +1,12 @@
 {
     "api_token": "<PUT_YOUR_API_TOKEN_HERE>",
     "chat_id": "<PUT_YOUR_CHAT_ID_HERE>",
+    "hf_token": "<PUT_YOUR_HUGGINGFACE_TOKEN_HERE>",
     "ollama_api_url": "http://localhost:11434",
-    "database_directory": "databases/ai_linux_v0.6.3.db",
+    "database_directory": "databases/chat_tg.db",
     "text": {
-        "default_model": "qwen2.5-VL-3B:latest",
-        "user_set_model": "qwen2.5-VL-3B:latest",
+        "default_model": "deepseek-r1:1.5b",
+        "user_set_model": "deepseek-r1:1.5b",
         "model_settings": {
             "temperature": 1,
             "num_thread": 4,
@@ -14,8 +15,14 @@
             "top_p": 1
         }
     },
+    "whisper": {
+        "default_model_path": "/app/models/ggml-tiny.en-q5_1.bin",
+        "big_model_path": "/app/models/ggml-large-v3-turbo-q5_0.bin",
+        "model_path": "/app/models/ggml-small.en-q8_0.bin",
+        "port": 9669
+    },
     "voice": {
-        "default_model": "cosyvoice",
-        "user_set_model": "cosyvoice"
+        "default_model": "nari-labs/Dia-1.6B",
+        "user_set_model": "nari-labs/Dia-1.6B"
     }
 }

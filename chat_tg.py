@@ -45,10 +45,8 @@ CONFIG_DIRECTORY = f"{WORKING_DIRECTORY}/config.json"
 
 # CONSTANTS
 # TELEGRAM CONSTANT VALUES
-BOT_TOKEN = "7286367646:AAHopTmJnRjAYS_s7xaCA3dvkD5vB9dylV4"
+BOT_TOKEN = str()
 CHAT_ID = str()
-
-bot = AsyncTeleBot(BOT_TOKEN)
 
 # DATABASE CONSTANT VALUE
 CHAT_DATABASE_DIRECTORY = str()
@@ -57,6 +55,7 @@ CHAT_DATABASE_DIRECTORY = str()
 OLLAMA_BASE_URL = str()
 TEXT_MODEL = str()
 VOICE_MODEL = str()
+WHISPER = dict()
 
 # LLM CONSTANTS
 text_model_temperature = int()
@@ -64,6 +63,9 @@ text_model_num_thread = int()
 text_model_num_ctx = int()
 text_model_top_k = int()
 text_model_top_p = int()
+
+# TOKENS
+HF_TOKEN = str()
 
 # GLOBAL ON EXECUTE VARIABLES
 CURRENT_TEXT_CHAT_ID = str()
@@ -101,8 +103,8 @@ async def make_request(url: str, is_post: bool = False, data: Dict[str, Any] = N
 # END UTILITY FUNCTIONS
 
 # START INIT FUNCTIONS
-async def load_config(config_directory: str) -> None:
-	global BOT_TOKEN, CHAT_ID, CHAT_DATABASE_DIRECTORY, OLLAMA_BASE_URL, TEXT_MODEL, VOICE_MODEL
+def load_config(config_directory: str) -> None:
+	global BOT_TOKEN, CHAT_ID, CHAT_DATABASE_DIRECTORY, OLLAMA_BASE_URL, TEXT_MODEL, VOICE_MODEL, WHISPER, HF_TOKEN
 	global text_model_temperature, text_model_num_thread, text_model_num_ctx, text_model_top_k, text_model_top_p
 
 	configs = None
@@ -117,6 +119,9 @@ async def load_config(config_directory: str) -> None:
 	OLLAMA_BASE_URL = configs["ollama_api_url"]
 	TEXT_MODEL = configs["text"]["user_set_model"]
 	VOICE_MODEL = configs["voice"]["user_set_model"]
+	WHISPER = configs["whisper"]
+
+	HF_TOKEN = configs["hf_token"]
 
 	text_model_temperature = configs["text"]["model_settings"]["temperature"]
 	text_model_num_thread = configs["text"]["model_settings"]["num_thread"]
@@ -131,11 +136,20 @@ async def load_config(config_directory: str) -> None:
 	logger.info(f"load_config - OLLAMA_BASE_URL: {OLLAMA_BASE_URL}")
 	logger.info(f"load_config - TEXT_MODEL: {TEXT_MODEL}")
 	logger.info(f"load_config - VOICE_MODEL: {VOICE_MODEL}")
+	logger.info(f"load_config - WHISPER: {WHISPER}")
+	logger.info(f"load_config - HF_TOKEN: {HF_TOKEN}")
 	logger.info(f"load_config - text_model_temperature: {text_model_temperature}")
 	logger.info(f"load_config - text_model_num_thread: {text_model_num_thread}")
 	logger.info(f"load_config - text_model_num_ctx: {text_model_num_ctx}")
 	logger.info(f"load_config - text_model_top_k: {text_model_top_k}")
 	logger.info(f"load_config - text_model_top_p: {text_model_top_p}")
+
+# LOAD CONFIG
+load_config(CONFIG_DIRECTORY)
+logger.info("main - Loaded configs")
+
+# INITIALIZE BOT
+bot = AsyncTeleBot(BOT_TOKEN)
 
 async def preload_config(config_directory: str) -> Dict[str, Any]:
 	logger.info("preload_config - Preloading config")
@@ -288,6 +302,46 @@ async def load_model(model: str) -> Any:
 	except Exception as e:
 		logger.error(f"load_model - Error - {status_code} - {response} - {e}")
 
+def whisper_load(model_path: str) -> Any:
+	data = {"model": model_path}
+	status_code, response = None, None
+	try:
+		logger.info(f"whisper_load - Making new request - {data}")
+		response = requests.post(
+			f"http://127.0.0.1:{WHISPER['port']}/load", 
+			files=data
+		)
+		logger.info(f"whisper_load - Received response - {response.status_code} - {response.text}")
+		return response.status_code, response.text
+	except Exception as e:
+		logger.error(f"whisper_load - Error - {status_code} - {response} - {e}")
+		return status_code, response
+
+def whisper_transcribe(file_path: str) -> Any:
+	data = {
+		"file": open(file_path, "rb"),
+		"response_format": "json"
+	}
+	status_code, response = None, None
+	try:
+		load_status_code, load_response = whisper_load(WHISPER["model_path"])
+		if load_status_code != 200:
+			status_code, response = load_status_code, load_response
+			raise Exception("whisper load model error")
+		logger.info(f"whisper_transcribe - Making new request - {data}")
+		response = requests.post(
+			f"http://127.0.0.1:{WHISPER['port']}/inference", 
+			files=data
+		)
+		logger.info(f"whisper_transcribe - Received - {response.status_code} - {response.text}")
+		whisper_load(WHISPER["default_model_path"])
+		status_code, json_response = response.status_code, response.json()
+		logger.info(f"whisper_transcribe - Received json - {status_code} - {json_response}")
+		return (status_code, "".join(json_response["text"].strip().splitlines())) if status_code == 200 else (status_code, response.text)
+	except Exception as e:
+		logger.error(f"whisper_transcribe - Error - {status_code} - {response} - {e}")
+		whisper_load(WHISPER["default_model_path"])
+		return status_code, response
 # END LLM FUNCTIONS
 
 # START INTERFACING FUNCTIONS
@@ -429,12 +483,45 @@ def use_cosyvoice(input_file: str, output_file: str, prompt: str) -> None:
 	logger.info(f"clone_voice - Sending voice - {output_file}")
 	cosyvoice.quit()
 
+def use_dia_huggingface(input_file: str, transcribed_audio: str, prompt: str) -> Any:
+	logger.info(f"use_dia_huggingface - Conneting client - {HF_TOKEN} - {input_file} - {transcribed_audio} - {prompt}")
+	client = gradio_client.Client("nari-labs/Dia-1.6B", hf_token=HF_TOKEN)
+	logger.info(f"use_dia_huggingface - Sending request - {input_file}")
+	response = client.predict(
+		text_input=f"[S1] {prompt}",
+		audio_prompt_input=gradio_client.handle_file(input_file),
+		transcription_input=f"[S1] {transcribed_audio}",
+		max_new_tokens=3072,
+		cfg_scale=1,
+		temperature=1.8,
+		top_p=3.1,
+		cfg_filter_top_k=50,
+		speed_factor=1,
+		api_name="/generate_audio"
+	)
+	logger.info(f"use_dia_huggingface - Received response - {input_file}")
+	return response
+
 async def clone_voice(input_file: str, prompt: str) -> None:
 	output_file = f"{gen_uuid('clone')}.wav"
-	await asyncio.to_thread(use_cosyvoice, input_file, output_file, prompt)
-	await bot.send_audio(CHAT_ID, telebot.types.InputFile(output_file), caption=prompt)
-	logger.info(f"clone_voice - Sent voice - {output_file}")
-	return
+	if VOICE_MODEL.lower() == "cosyvoice":
+		await asyncio.to_thread(use_cosyvoice, input_file, output_file, prompt)
+		await bot.send_audio(CHAT_ID, telebot.types.InputFile(output_file), caption=prompt)
+		logger.info(f"clone_voice - Sent voice - {output_file}")
+	elif VOICE_MODEL.lower() == "nari-labs/dia-1.6b":
+		status_code, transcribed_audio = await asyncio.to_thread(whisper_transcribe, input_file)
+		logger.info(f"clone_voice - Transcribed audio - {input_file} - {status_code} - {transcribed_audio}")
+		if status_code != 200:
+			logger.info(f"clone_voice - Could not transcribe audio input invalid status code - {input_file} - {status_code}")
+			await print_bot(f"Could not transcribe audio input invalid status code `{status_code}`")
+			return
+		response = await asyncio.to_thread(use_dia_huggingface, input_file, transcribed_audio, prompt)
+		logger.info(f"clone_voice - Response voice received - {input_file} - {response}")
+		if response is not None:
+			shutil.copy(response, output_file)
+			logger.info(f"clone_voice - Copied cloned voice file - {output_file}")
+			await bot.send_audio(CHAT_ID, telebot.types.InputFile(response), caption=prompt)
+			logger.info(f"clone_voice - Sent cloned voice - {response}")
 
 @bot.message_handler(commands=['start'])
 async def exec_cmd_start(message: telebot.types.Message):
@@ -490,7 +577,7 @@ async def exec_cmd_load_text_model(message: telebot.types.Message):
 	configs = await preload_config(CONFIG_DIRECTORY)
 	configs["text"]["user_set_model"] = message.text.split()[1]
 	await presave_config(CONFIG_DIRECTORY, configs)
-	await load_config(CONFIG_DIRECTORY)
+	load_config(CONFIG_DIRECTORY)
 
 	await print_bot("Loading...")
 	await load_model(TEXT_MODEL)
@@ -501,7 +588,7 @@ async def exec_cmd_set_text_model(message: telebot.types.Message):
 	configs = await preload_config(CONFIG_DIRECTORY)
 	configs["text"]["user_set_model"] = message.text.split()[1]
 	await presave_config(CONFIG_DIRECTORY, configs)
-	await load_config(CONFIG_DIRECTORY)
+	load_config(CONFIG_DIRECTORY)
 	await print_bot(f"Current text model: `{TEXT_MODEL}`")
 
 @bot.message_handler(commands=['print_chat'])
@@ -557,8 +644,6 @@ async def main():
 	logger.info("main - Initialized bot")
 	aiohttp_session = aiohttp.ClientSession()
 	logger.info("main - Created aiohttp session")
-	await load_config(CONFIG_DIRECTORY)
-	logger.info("main - Loaded configs")
 	await _mkdir(f"{WORKING_DIRECTORY}/databases")
 	logger.info("main - Created database directory")
 	CURRENT_TEXT_CHAT_ID = gen_uuid("chat")
