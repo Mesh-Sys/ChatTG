@@ -526,7 +526,7 @@ def use_dia_local_inference(input_file: str, transcribed_audio: str, output_file
 		logger.info(f"use_dia_local_inference - Loaded model")
 	logger.info(f"use_dia_local_inference - Starting inference - {input_file}")
 	response = NARI_LABS_DIA_MODEL.generate(
-		f"{transcribed_audio}\n{prompt}"
+		f"[S1] {transcribed_audio}\n[S1] {prompt}"
 		audio_prompt=input_file,
 		use_torch_compile=False,
 		verbose=True,
