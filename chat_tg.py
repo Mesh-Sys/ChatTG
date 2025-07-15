@@ -31,7 +31,7 @@ CONFIG_DIRECTORY = f"{WORKING_DIRECTORY}/config.json"
 parser = argparse.ArgumentParser(description="Ai ChatBot on Telegram")
 parser.add_argument(
 	"-c", "--config", type=str, default=CONFIG_DIRECTORY, 
-	help="Specifies the cconfig file to use (Defaults to a config.json file in the current working directory)"
+	help="Specifies the config file to use (Defaults to a config.json file in the current working directory)"
 )
 
 cmd_args = parser.parse_args()
@@ -192,13 +192,13 @@ async def presave_config(config_directory: str, config_content: Dict[str, Any]) 
 
 # START DATABASE FUNCTIONS
 async def sql_exec(sql: str, values: tuple = (), executemany: bool = False) -> Any:
-	logger.info(f"sql_exec - Executing sql - {sql} - values - {values}")
+	logger.info(f"sql_exec - Executing sql - {''.join([x.strip() for x in sql.splitlines()])} - values - {values}")
 	cursor = await DATABASE.executemany(sql, values) if executemany else await DATABASE.execute(sql, values)
 	await DATABASE.commit()
 	return cursor
 
 async def query_sql_exec(sql: str, values: tuple = (), fetchall: bool = False) -> Any:
-	logger.info(f"query_sql_exec - Querying sql - {sql} - values - {values}")
+	logger.info(f"query_sql_exec - Querying sql - {''.join([x.strip() for x in sql.splitlines()])} - values - {values}")
 	cursor = await DATABASE.execute(sql, values)
 	return await cursor.fetchall() if fetchall else await cursor.fetchone()
 

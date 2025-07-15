@@ -4,10 +4,7 @@ version = "0.6.4"
 description = "Ai ChatBot on Telegram"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
-authors = [
-    {name = "John Whisk", email = "wkhsisks66@gmail.com"}
-]
+
 dependencies = [
     "descript-audio-codec>=1.0.0",
     "gradio>=5.25.2",
