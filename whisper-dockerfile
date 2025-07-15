@@ -2,9 +2,9 @@ FROM ghcr.io/ggml-org/whisper.cpp:main
 RUN apt-get update
 RUN apt-get install -y aria2 btop
 
-RUN aria2c -x16 -s16 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en-q5_1.bin" -o "/app/models/ggml-tiny.en-q5_1.bin"
-RUN aria2c -x16 -s16 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin" -o "/app/models/ggml-large-v3-turbo-q5_0.bin"
-RUN aria2c -x16 -s16 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en-q8_0.bin" -o "/app/models/ggml-small.en-q8_0.bin"
+RUN aria2c -x16 -s16 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en-q5_1.bin" -d "/app/models/" -o "ggml-tiny.en-q5_1.bin"
+RUN aria2c -x16 -s16 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin" -d "/app/models/" -o "ggml-large-v3-turbo-q5_0.bin"
+RUN aria2c -x16 -s16 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en-q8_0.bin" -d "/app/models/" -o "ggml-small.en-q8_0.bin"
 
 # COPY ggml-tiny.en-q5_1.bin /app/models/ggml-tiny.en-q5_1.bin
 # COPY ggml-large-v3-turbo-q5_0.bin /app/models/ggml-large-v3-turbo-q5_0.bin
