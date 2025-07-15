@@ -543,7 +543,7 @@ def use_dia_local_inference(input_file: str, transcribed_audio: str, output_file
 	if NARI_LABS_DIA_MODEL is None:
 		logger.info(f"use_dia_local_inference - Loading model")
 		#NARI_LABS_DIA_MODEL = Dia.from_pretrained("nari-labs/Dia-1.6B-0626", compute_dtype="float16")
-		NARI_LABS_DIA_MODEL = Dia.from_pretrained("nari-labs/Dia-1.6B-0626", compute_dtype="bfloat16")
+		NARI_LABS_DIA_MODEL = Dia.from_pretrained("nari-labs/Dia-1.6B-0626", compute_dtype="int8")
 		logger.info(f"use_dia_local_inference - Loaded model")
 	logger.info(f"use_dia_local_inference - Starting inference - {input_file}")
 	response = NARI_LABS_DIA_MODEL.generate(
