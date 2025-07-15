@@ -90,7 +90,7 @@ class ComputeDtype(str, Enum):
         elif self == ComputeDtype.BFLOAT16:
             return torch.bfloat16
         elif self == ComputeDtype.INT8:
-            return torch.int8
+            return torch.qint8
         else:
             raise ValueError(f"Unsupported compute dtype: {self}")
 
