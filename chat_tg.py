@@ -50,13 +50,13 @@ LOG_FILE = "/var/log/chat_tg.log"
 # define logging basic config
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-#logger_fh = logging.FileHandler(LOG_FILE, mode='w')
-#logger_fh.setLevel(logging.INFO)
-#logger_fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+logger_fh = logging.FileHandler(LOG_FILE, mode='w')
+logger_fh.setLevel(logging.INFO)
+logger_fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
 logger_sh = logging.StreamHandler()
 logger_sh.setLevel(logging.INFO)
 logger_sh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
-#logger.addHandler(logger_fh)
+logger.addHandler(logger_fh)
 logger.addHandler(logger_sh)
 
 # if using sqlite
