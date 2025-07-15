@@ -577,6 +577,11 @@ async def clone_voice(input_file: str, prompt: str) -> None:
 		await bot.send_audio(CHAT_ID, telebot.types.InputFile(output_file), caption=prompt)
 	logger.info(f"clone_voice - Sent generated voice")
 
+async def transcribe_audio(input_file: str) -> None:
+	status_code, transcribed_audio = await asyncio.to_thread(whisper_transcribe, input_file)
+	logger.info(f"clone_voice - Transcribed audio - {input_file} - {status_code} - {transcribed_audio}")
+	await print_bot(f"*Transcribed Audio*\n```\n{transcribed_audio}```")
+
 @bot.message_handler(commands=['start'])
 async def exec_cmd_start(message: telebot.types.Message):
 	await print_bot(f"ChatTG `{VERSION}`")
@@ -655,8 +660,7 @@ async def exec_cmd_select_chat(message: telebot.types.Message):
 	CURRENT_TEXT_CHAT_ID = message.text.split()[1]
 	await print_bot(f"Current chat id: `{CURRENT_TEXT_CHAT_ID}`")
 
-@bot.message_handler(content_types=['audio', 'photo', 'voice', 'video', 'document',
-    'text', 'location', 'contact', 'sticker'])
+@bot.message_handler(content_types=['audio', 'photo', 'voice', 'video', 'document'])
 async def handle_file(message: telebot.types.Message):
 	try:
 		logger.info(f"handle_file - New file request received - {message.caption}")
@@ -675,17 +679,24 @@ async def handle_file(message: telebot.types.Message):
 			logger.info(f"handle_file - File data")
 			raw_file = f"/tmp/{gen_uuid('raw')}.mp3"
 			wav_file = f"/tmp/{gen_uuid('audio')}.wav"
-			with open(raw_file, "wb") as input_file:
-				input_file.write(file_data)
-			if str(message.caption).startswith("/v"):
+			if str(message.audio.file_name).endswith("mp3"):
+				with open(raw_file, "wb") as input_file:
+					input_file.write(file_data)
 				sound = AudioSegment.from_mp3(raw_file)
 				sound.export(wav_file, format="wav")
+			else:
+				with open(wav_file, "wb") as input_file:
+					input_file.write(file_data)
+
+			if str(message.caption).startswith("/v"):
 				logger.info(f"handle_file - Running...")
 				await print_bot("Running...")
 				prompt = str(message.caption).replace("/v ", "")
 				await clone_voice(wav_file, prompt)
 			else:
-				await transcribe_audio()
+				logger.info(f"handle_file - Transcribing...")
+				await print_bot("Transcribing...")
+				await transcribe_audio(wav_file)
 		else:
 			telegram_file_path = await bot.get_file(message.document.file_id)
 			file_data = await bot.download_file(telegram_file_path.file_path)
