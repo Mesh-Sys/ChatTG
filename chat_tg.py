@@ -18,8 +18,8 @@ from pydub import AudioSegment
 from typing import Dict, Any, List
 
 import sys
-sys.path.append('/run/media/mesh/git_wsp/CosyVoice/third_party/Matcha-TTS')
-sys.path.append('/run/media/mesh/git_wsp/CosyVoice')
+#sys.path.append('/run/media/mesh/git_wsp/CosyVoice/third_party/Matcha-TTS')
+#sys.path.append('/run/media/mesh/git_wsp/CosyVoice')
 
 from dia.model import Dia
 
