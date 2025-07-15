@@ -665,23 +665,27 @@ async def handle_file(message: telebot.types.Message):
 			await print_main("*Invalid chat id*")
 			return
 
+		logger.info(f"handle_file - Request - {message}")
+
 		if message.content_type == "audio":
 			logger.info(f"handle_file - Received audio")
 			telegram_file_path = await bot.get_file(message.audio.file_id)
 			logger.info(f"handle_file - File path - {telegram_file_path}")
 			file_data = await bot.download_file(telegram_file_path.file_path)
 			logger.info(f"handle_file - File data")
+			raw_file = f"/tmp/{gen_uuid('raw')}.mp3"
+			wav_file = f"/tmp/{gen_uuid('audio')}.wav"
+			with open(raw_file, "wb") as input_file:
+				input_file.write(file_data)
 			if str(message.caption).startswith("/v"):
-				raw_file = f"/tmp/{gen_uuid('raw')}"
-				wav_file = f"/tmp/{gen_uuid('wav')}"
-				with open(raw_file, "wb") as input_file:
-					input_file.write(file_data)
 				sound = AudioSegment.from_mp3(raw_file)
 				sound.export(wav_file, format="wav")
 				logger.info(f"handle_file - Running...")
 				await print_bot("Running...")
 				prompt = str(message.caption).replace("/v ", "")
 				await clone_voice(wav_file, prompt)
+			else:
+				await transcribe_audio()
 		else:
 			telegram_file_path = await bot.get_file(message.document.file_id)
 			file_data = await bot.download_file(telegram_file_path.file_path)
