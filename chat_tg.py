@@ -1,6 +1,6 @@
-# v0.6.2
 VERSION = "v0.6.3"
 
+import argparse
 import aiohttp
 import asyncio
 import uvloop
@@ -11,6 +11,7 @@ import uuid
 import textwrap
 import logging
 import base64
+import requests
 from datetime import datetime
 import os
 from pydub import AudioSegment
@@ -21,6 +22,26 @@ sys.path.append('/run/media/mesh/git_wsp/CosyVoice/third_party/Matcha-TTS')
 sys.path.append('/run/media/mesh/git_wsp/CosyVoice')
 
 from dia.model import Dia
+
+# config location
+WORKING_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+CONFIG_DIRECTORY = f"{WORKING_DIRECTORY}/config.json"
+
+# GET ARGUMENTS
+parser = argparse.ArgumentParser(description="Ai ChatBot on Telegram")
+parser.add_argument(
+	"-c", "--config", type=str, default=CONFIG_DIRECTORY, 
+	help="Specifies the cconfig file to use (Defaults to a config.json file in the current working directory)"
+)
+
+cmd_args = parser.parse_args()
+
+if cmd_args.config:
+	if os.path.exists(cmd_args.config):
+		CONFIG_DIRECTORY = cmd_args.config
+	else:
+		print("config file does not exists")
+		os._exit(0)
 
 # ENABLE UVLOOP
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -45,10 +66,6 @@ import aiosqlite
 import telebot
 from telebot import util
 from telebot.async_telebot import AsyncTeleBot
-
-# config location
-WORKING_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
-CONFIG_DIRECTORY = f"{WORKING_DIRECTORY}/config.json"
 
 # CONSTANTS
 # TELEGRAM CONSTANT VALUES
@@ -113,43 +130,46 @@ async def make_request(url: str, is_post: bool = False, data: Dict[str, Any] = N
 def load_config(config_directory: str) -> None:
 	global BOT_TOKEN, CHAT_ID, CHAT_DATABASE_DIRECTORY, OLLAMA_BASE_URL, TEXT_MODEL, VOICE_MODEL, WHISPER, HF_TOKEN
 	global text_model_temperature, text_model_num_thread, text_model_num_ctx, text_model_top_k, text_model_top_p
+	try:
+		configs = None
+		with open(config_directory, "r") as config_file:
+			configs = json.load(config_file)
 
-	configs = None
-	with open(config_directory, "r") as config_file:
-		configs = json.load(config_file)
+		BOT_TOKEN = configs["api_token"]
+		CHAT_ID = configs["chat_id"]
 
-	BOT_TOKEN = configs["api_token"]
-	CHAT_ID = configs["chat_id"]
+		CHAT_DATABASE_DIRECTORY = configs["database_directory"]
 
-	CHAT_DATABASE_DIRECTORY = configs["database_directory"]
+		OLLAMA_BASE_URL = configs["ollama_api_url"]
+		TEXT_MODEL = configs["text"]["user_set_model"]
+		VOICE_MODEL = configs["voice"]["user_set_model"]
+		WHISPER = configs["whisper"]
 
-	OLLAMA_BASE_URL = configs["ollama_api_url"]
-	TEXT_MODEL = configs["text"]["user_set_model"]
-	VOICE_MODEL = configs["voice"]["user_set_model"]
-	WHISPER = configs["whisper"]
+		HF_TOKEN = configs["hf_token"]
 
-	HF_TOKEN = configs["hf_token"]
+		text_model_temperature = configs["text"]["model_settings"]["temperature"]
+		text_model_num_thread = configs["text"]["model_settings"]["num_thread"]
+		text_model_num_ctx = configs["text"]["model_settings"]["num_ctx"]
+		text_model_top_k = configs["text"]["model_settings"]["top_k"]
+		text_model_top_p = configs["text"]["model_settings"]["top_p"]
 
-	text_model_temperature = configs["text"]["model_settings"]["temperature"]
-	text_model_num_thread = configs["text"]["model_settings"]["num_thread"]
-	text_model_num_ctx = configs["text"]["model_settings"]["num_ctx"]
-	text_model_top_k = configs["text"]["model_settings"]["top_k"]
-	text_model_top_p = configs["text"]["model_settings"]["top_p"]
-
-	logger.info("load_config - Loaded configs")
-	logger.info(f"load_config - BOT_TOKEN: {BOT_TOKEN}")
-	logger.info(f"load_config - CHAT_ID: {CHAT_ID}")
-	logger.info(f"load_config - CHAT_DATABASE_DIRECTORY: {CHAT_DATABASE_DIRECTORY}")
-	logger.info(f"load_config - OLLAMA_BASE_URL: {OLLAMA_BASE_URL}")
-	logger.info(f"load_config - TEXT_MODEL: {TEXT_MODEL}")
-	logger.info(f"load_config - VOICE_MODEL: {VOICE_MODEL}")
-	logger.info(f"load_config - WHISPER: {WHISPER}")
-	logger.info(f"load_config - HF_TOKEN: {HF_TOKEN}")
-	logger.info(f"load_config - text_model_temperature: {text_model_temperature}")
-	logger.info(f"load_config - text_model_num_thread: {text_model_num_thread}")
-	logger.info(f"load_config - text_model_num_ctx: {text_model_num_ctx}")
-	logger.info(f"load_config - text_model_top_k: {text_model_top_k}")
-	logger.info(f"load_config - text_model_top_p: {text_model_top_p}")
+		logger.info("load_config - Loaded configs")
+		logger.info(f"load_config - BOT_TOKEN: {BOT_TOKEN}")
+		logger.info(f"load_config - CHAT_ID: {CHAT_ID}")
+		logger.info(f"load_config - CHAT_DATABASE_DIRECTORY: {CHAT_DATABASE_DIRECTORY}")
+		logger.info(f"load_config - OLLAMA_BASE_URL: {OLLAMA_BASE_URL}")
+		logger.info(f"load_config - TEXT_MODEL: {TEXT_MODEL}")
+		logger.info(f"load_config - VOICE_MODEL: {VOICE_MODEL}")
+		logger.info(f"load_config - WHISPER: {WHISPER}")
+		logger.info(f"load_config - HF_TOKEN: {HF_TOKEN}")
+		logger.info(f"load_config - text_model_temperature: {text_model_temperature}")
+		logger.info(f"load_config - text_model_num_thread: {text_model_num_thread}")
+		logger.info(f"load_config - text_model_num_ctx: {text_model_num_ctx}")
+		logger.info(f"load_config - text_model_top_k: {text_model_top_k}")
+		logger.info(f"load_config - text_model_top_p: {text_model_top_p}")
+	except Exception as e:
+		logger.error(f"load_config - Error loading config - {e}")
+		os._exit(0)
 
 # LOAD CONFIG
 load_config(CONFIG_DIRECTORY)
@@ -518,23 +538,23 @@ def use_dia_huggingface(input_file: str, transcribed_audio: str, prompt: str) ->
 NARI_LABS_DIA_MODEL = None
 
 def use_dia_local_inference(input_file: str, transcribed_audio: str, output_file: str, prompt: str) -> None:
+	global NARI_LABS_DIA_MODEL
 	start_time = time.time()
 	if NARI_LABS_DIA_MODEL is None:
-		global NARI_LABS_DIA_MODEL
 		logger.info(f"use_dia_local_inference - Loading model")
-		NARI_LABS_DIA_MODEL = Dia.from_pretrained("nari-labs/Dia-1.6B-0626", compute_dtype="float16")
+		#NARI_LABS_DIA_MODEL = Dia.from_pretrained("nari-labs/Dia-1.6B-0626", compute_dtype="float16")
+		NARI_LABS_DIA_MODEL = Dia.from_pretrained("nari-labs/Dia-1.6B-0626", compute_dtype="float32")
 		logger.info(f"use_dia_local_inference - Loaded model")
 	logger.info(f"use_dia_local_inference - Starting inference - {input_file}")
 	response = NARI_LABS_DIA_MODEL.generate(
-		f"[S1] {transcribed_audio}\n[S1] {prompt}"
+		f"[S1] {transcribed_audio}\n[S1] {prompt}",
 		audio_prompt=input_file,
 		use_torch_compile=False,
 		verbose=True,
 		cfg_scale=1.0,
 		temperature=1.8,
 		top_p=3.1,
-		cfg_filter_top_k=50,
-		speed_factor=1
+		cfg_filter_top_k=50
 	)
 	NARI_LABS_DIA_MODEL.save_audio(output_file, response)
 	logger.info(f"use_dia_local_inference - Generated response in {round(time.time() - start_time, 2)}s - {input_file} - {output_file}")
@@ -548,12 +568,13 @@ async def clone_voice(input_file: str, prompt: str) -> None:
 	elif VOICE_MODEL.lower() == "nari-labs/dia-1.6b":
 		status_code, transcribed_audio = await asyncio.to_thread(whisper_transcribe, input_file)
 		logger.info(f"clone_voice - Transcribed audio - {input_file} - {status_code} - {transcribed_audio}")
+		await print_bot(f"*Transcribed Audio*\n```\n{transcribed_audio}```")
 		if status_code != 200:
 			logger.info(f"clone_voice - Could not transcribe audio input invalid status code - {input_file} - {status_code}")
 			await print_bot(f"Could not transcribe audio input invalid status code `{status_code}`")
 			return
 		await asyncio.to_thread(use_dia_local_inference, input_file, transcribed_audio, output_file, prompt)
-		await bot.send_audio(CHAT_ID, telebot.types.InputFile(response), caption=prompt)
+		await bot.send_audio(CHAT_ID, telebot.types.InputFile(output_file), caption=prompt)
 	logger.info(f"clone_voice - Sent generated voice")
 
 @bot.message_handler(commands=['start'])
@@ -677,8 +698,6 @@ async def main():
 	logger.info("main - Initialized bot")
 	aiohttp_session = aiohttp.ClientSession()
 	logger.info("main - Created aiohttp session")
-	await _mkdir(f"{WORKING_DIRECTORY}/databases")
-	logger.info("main - Created database directory")
 	CURRENT_TEXT_CHAT_ID = gen_uuid("chat")
 	await init_database(CHAT_DATABASE_DIRECTORY)
 	logger.info("main - Initialized database")

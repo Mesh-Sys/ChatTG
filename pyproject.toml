@@ -1,0 +1,68 @@
+[project]
+name = "chat_tg"
+version = "0.6.4"
+description = "Ai ChatBot on Telegram"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "John Whisk", email = "wkhsisks66@gmail.com"}
+]
+dependencies = [
+    "descript-audio-codec>=1.0.0",
+    "gradio>=5.25.2",
+    "huggingface-hub>=0.30.2",
+    "numpy>=2.2.4",
+    "pydantic>=2.11.3",
+    "safetensors>=0.5.3",
+    "soundfile>=0.13.1",
+    "torch==2.6.0",
+    "torchaudio==2.6.0",
+    "triton==3.2.0 ; sys_platform == 'linux'",
+    "triton-windows==3.2.0.post18 ; sys_platform == 'win32'",
+    "pydub",
+    "uvloop",
+    "aiohttp>=3.12.14",
+    "aiosqlite>=0.21.0",
+    "pytelegrambotapi>=4.27.0",
+    "requests>=2.32.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dia"]
+
+[tool.ruff]
+# Never enforce `E501` (line length violations).
+lint.ignore = ["C901", "E501", "E741", "W605"]
+lint.select = ["C", "E", "F", "I", "W"]
+line-length = 119
+
+# Ignore import violations in all `__init__.py` files.
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401", "F403", "F811"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchaudio = [
+  { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "ninja>=1.11.1.4",
+    "packaging>=25.0",
+]
