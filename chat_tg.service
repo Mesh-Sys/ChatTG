@@ -3,7 +3,7 @@ Description=Ai ChatBot on Telegram
 After=network.target
 
 [Service]
-ExecStart=/home/system/.venv/bin/python /home/system/ChatTG/chat_tg.py --config /home/system/ChatTG/config.json
+ExecStart=/home/system/ChatTG/.venv/bin/python /home/system/ChatTG/chat_tg.py --config /home/system/ChatTG/config.json
 Restart=always
 
 [Install]
