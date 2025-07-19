@@ -36,7 +36,7 @@ parser.add_argument(
 
 parser.add_argument(
 	"-v", "--verbose", action="store_true", 
-	help="Enables logging to std out"
+	help="Enables logging to stdout"
 )
 
 cmd_args = parser.parse_args()
