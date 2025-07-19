@@ -34,6 +34,11 @@ parser.add_argument(
 	help="Specifies the config file to use (Defaults to a config.json file in the current working directory)"
 )
 
+parser.add_argument(
+	"-v", "--verbose", action="store_true", 
+	help="Enables logging to std out"
+)
+
 cmd_args = parser.parse_args()
 
 if cmd_args.config:
@@ -53,11 +58,12 @@ logger.setLevel(logging.INFO)
 logger_fh = logging.FileHandler(LOG_FILE, mode='w')
 logger_fh.setLevel(logging.INFO)
 logger_fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
-logger_sh = logging.StreamHandler()
-logger_sh.setLevel(logging.INFO)
-logger_sh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
 logger.addHandler(logger_fh)
-logger.addHandler(logger_sh)
+if cmd_args.verbose:
+	logger_sh = logging.StreamHandler()
+	logger_sh.setLevel(logging.INFO)
+	logger_sh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+	logger.addHandler(logger_sh)
 
 # if using sqlite
 import aiosqlite
